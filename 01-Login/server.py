@@ -15,6 +15,7 @@ from flask import session
 from flask import url_for
 from authlib.integrations.flask_client import OAuth
 from six.moves.urllib.parse import urlencode
+from urllib.parse import urlparse
 
 import constants
 from looker import Looker, User, URL
@@ -111,8 +112,10 @@ def callback_handling():
         (expired, return_url) = validate_noonce(session[noonce_id], noonce_id)
         session.pop(noonce_id)
         print(f"ReturnURL: {return_url}")
+        url_parts = urlparse(return_url)
+        is_root = url_parts.path == "/"
         next_url = url_for('dashboard')
-        if (expired or return_url == url_for('home')):
+        if (expired or is_root):
             next_url = url_for('dashboard')
         else:
             next_url = return_url
