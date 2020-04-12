@@ -2,13 +2,14 @@
 """
 from functools import wraps
 import json
+import uuid
 from os import environ as env
 from werkzeug.exceptions import HTTPException
-
+from datetime import datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from flask import Flask
 from flask import jsonify
-from flask import redirect
+from flask import redirect, request, url_for
 from flask import render_template
 from flask import session
 from flask import url_for
@@ -16,9 +17,11 @@ from authlib.integrations.flask_client import OAuth
 from six.moves.urllib.parse import urlencode
 
 import constants
+from looker import Looker, User, URL
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
+    print("loading environment file")
     load_dotenv(ENV_FILE)
 
 AUTH0_CALLBACK_URL = env.get(constants.AUTH0_CALLBACK_URL)
@@ -54,12 +57,30 @@ auth0 = oauth.register(
     },
 )
 
+def create_noonce(request_args):
+    url = request.args.get('next') or request.referrer or None
+    id = str(uuid.uuid4())
+    noonce = {
+        id: {
+            'redirectUrl': url,
+            'expiresOn': datetime.utcnow() + timedelta(minutes=5)
+        }
+    }
+    return (id, noonce)
+
+def validate_noonce(noonce, key):
+    expired = False
+    expires = noonce[key]["expiresOn"]
+    redirectUrl = noonce[key]["redirectUrl"]
+    print(f"Expires: {expires}, RedirectUrl: {redirectUrl}")
+    return (expires < datetime.utcnow(), redirectUrl)
+
 
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if constants.PROFILE_KEY not in session:
-            return redirect('/login')
+            return redirect(url_for('login', next=request.url))
         return f(*args, **kwargs)
 
     return decorated
@@ -83,12 +104,24 @@ def callback_handling():
         'name': userinfo['name'],
         'picture': userinfo['picture']
     }
-    return redirect('/dashboard')
+    print(f"callback args: {request.args}")
+    noonce_id = request.args.get('state')
+    if noonce_id in session:
+        print(f"Found noonce for session: {noonce_id}")
+        (expired, return_url) = validate_noonce(session[noonce_id], noonce_id)
+        session.pop(noonce_id)
+        next_url = return_url if not expired or None else url_for('dashboard')
+        return redirect(next_url)
+    return redirect(url_for('dashboard'))
 
 
 @app.route('/login')
 def login():
-    return auth0.authorize_redirect(redirect_uri=AUTH0_CALLBACK_URL, audience=AUTH0_AUDIENCE)
+    (id, noonce) = create_noonce(request.args)
+    #print(f"validated: {validate_noonce(noonce, id)}")
+    session[id] = noonce
+    return auth0.authorize_redirect(redirect_uri=AUTH0_CALLBACK_URL, audience=AUTH0_AUDIENCE, 
+        state=id)
 
 
 @app.route('/logout')
@@ -98,13 +131,48 @@ def logout():
     return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
 
 
+def get_looker_biz(looker_url):
+    looker = Looker(env.get(constants.LOOKER_APP), env.get(constants.LOOKER_SECRET))
+    user_biz = session[constants.JWT_PAYLOAD]
+    user = User(user_biz['sub'],
+              first_name=user_biz['name'],
+              last_name=user_biz['name'],
+              permissions=['see_lookml_dashboards', 'see_user_dashboards', 'access_data'],
+              models=['teletracking', 'covid'],
+              group_ids=[],
+              external_group_id='teletracking',
+              user_attributes={"tenant_id": user_biz['https://example.com/tenant_id']},
+              access_filters={})
+
+    fifteen_minutes = 15 * 60
+
+    url = URL(looker, user, fifteen_minutes, looker_url, force_logout_login=True)
+    return f"https://{url.to_string()}"
+
+
+@app.route('/dashboard/<dashboard_id>')
+@requires_auth
+def dashboards(dashboard_id):
+    url = get_looker_biz(f"/embed/dashboards/{dashboard_id}")
+    return render_template('embedded.html', url=url)
+
+
+@app.route('/analytics')
+@requires_auth
+def analytics():
+    
+    url = get_looker_biz('/embed/dashboards/7')
+    return render_template('embedded.html', url=url)
+
+
 @app.route('/dashboard')
 @requires_auth
 def dashboard():
+    print(session)
     return render_template('dashboard.html',
                            userinfo=session[constants.PROFILE_KEY],
                            userinfo_pretty=json.dumps(session[constants.JWT_PAYLOAD], indent=4))
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=env.get('PORT', 3000))
+    app.run()

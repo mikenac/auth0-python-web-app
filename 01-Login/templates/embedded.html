@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+body {
+	background-color: #F7F7EF;
+	font-family: arial;
+  font-weight: 100
+  font-size: 100px; 
+	color: #000000;
+  margin:0;
+padding:0;
+}
+.topnav {
+  overflow: hidden;
+  background-color: #282828;
+}
+
+.topnav a {
+  float: left;
+  color: #ffffff;
+  text-align: center;
+  padding: 24px 24px;
+  text-decoration: none;
+  font-size: 25px;
+}
+.topnav a:hover {
+  background-color: #525252;
+  color: black;
+}
+.topnav a.active {
+  background-color: #525252;
+  color: white;
+}
+.iframe-container {
+  overflow: hidden;
+}
+.iframe-container iframe {
+  border: 0 none;
+  display: block;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  width: 100vw;
+  box-sizing: border-box;
+}
+</style>
+</head>
+<body>
+<div class="topnav">
+<a href="#"><i class="fa fa-area-chart" style="font-size:25px"></i> Analytics</a>
+  <a id="tab-1" class="active tab" href="/analytics">COVID-19</a>
+  <a id="tab-2" class="tab" href="/dashboard/2">Eric</a>
+  <a id="tab-3" class="tab" href="#about">Throughput</a>
+  <a href="/logout">Logout</a>
+</div>
+<div class="iframe-container">
+<br>
+<iframe src='{{ url }}' frameborder="0" scrolling="no"></iframe>
+</div>
+<script   src="https://code.jquery.com/jquery-3.4.1.min.js"   integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="   crossorigin="anonymous">
+</script>
+<script>
+  $( document ).ready(function() {
+    $(".tab").click (function () {
+      $(".active").removeClass("active");
+      $(this).addClass("active")
+    });
+  });
+</script>
+</body>
+</html>
