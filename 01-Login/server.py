@@ -9,9 +9,9 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv, find_dotenv
 from flask import Flask
 from flask import jsonify
-from flask import redirect, request, url_for
+from flask import redirect, request, url_for, Response, make_response
 from flask import render_template
-from flask import session
+from flask import session, abort
 from flask import url_for
 from authlib.integrations.flask_client import OAuth
 from six.moves.urllib.parse import urlencode
@@ -36,6 +36,9 @@ app = Flask(__name__, static_url_path='/public', static_folder='./public')
 app.secret_key = constants.SECRET_KEY
 app.debug = True
 
+@app.errorhandler(403)
+def custom_403(error):
+    return render_template('401.html'), 403
 
 @app.errorhandler(Exception)
 def handle_auth_error(ex):
@@ -119,7 +122,8 @@ def callback_handling():
             next_url = url_for('dashboard')
         else:
             next_url = return_url
-
+    else:
+        abort(403)
     return redirect(next_url)
 
 
@@ -142,6 +146,9 @@ def logout():
 def get_looker_biz(looker_url):
     looker = Looker(env.get(constants.LOOKER_APP), env.get(constants.LOOKER_SECRET))
     user_biz = session[constants.JWT_PAYLOAD]
+    roles = user_biz["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
+    if "TeleSupport" not in roles:
+        abort(403)
     user = User(user_biz['sub'],
               first_name=user_biz['name'],
               last_name=user_biz['name'],
