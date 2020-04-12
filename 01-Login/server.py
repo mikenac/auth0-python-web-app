@@ -110,12 +110,14 @@ def callback_handling():
         print(f"Found noonce for session: {noonce_id}")
         (expired, return_url) = validate_noonce(session[noonce_id], noonce_id)
         session.pop(noonce_id)
-        if (return_url == url_for(home)):
+        print(f"ReturnURL: {return_url}")
+        next_url = url_for('dashboard')
+        if (expired or return_url == url_for('home')):
             next_url = url_for('dashboard')
         else:
-            next_url = return_url if not expired else url_for('dashboard')
-        return redirect(next_url)
-    return redirect(url_for('dashboard'))
+            next_url = return_url
+
+    return redirect(next_url)
 
 
 @app.route('/login')
