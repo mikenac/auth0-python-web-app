@@ -161,7 +161,9 @@ def get_looker_biz(looker_url):
 
     fifteen_minutes = 15 * 60
 
-    url = URL(looker, user, fifteen_minutes, looker_url, force_logout_login=True)
+    url = URL(looker, user, fifteen_minutes, looker_url,
+        embed_domain='https://looker-sso.herokuapp.com', 
+        force_logout_login=True)
     return f"https://{url.to_string()}"
 
 

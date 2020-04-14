@@ -41,11 +41,12 @@ class User:
 
 
 class URL:
-  def __init__(self, looker, user, session_length, embed_url, force_logout_login=False):
+  def __init__(self, looker, user, session_length, embed_url, embed_domain, force_logout_login=False):
     self.looker = looker
     self.user = user
     self.path = '/login/embed/' + urllib.parse.quote_plus(embed_url)
     self.session_length = json.dumps(session_length)
+    self.embed_domain = json.dumps(embed_domain)
     self.force_logout_login = json.dumps(force_logout_login)
 
   def set_time(self):
@@ -90,6 +91,7 @@ class URL:
               'signature':           self.signature,
               'first_name':          self.user.first_name,
               'last_name':           self.user.last_name,
+              'embed_domain':        self.embed_domain,
               'force_logout_login':  self.force_logout_login}
 
     query_string = '&'.join(["%s=%s" % (key, urllib.parse.quote_plus(val)) for key, val in params.items()])
