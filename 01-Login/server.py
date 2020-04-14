@@ -183,6 +183,13 @@ def analytics():
     print(f"url={url}")
     return render_template('embedded.html', url=url)
 
+@app.route('/get_url')
+@requires_auth
+def get_url():
+    
+    url = get_looker_biz('/embed/dashboards/7')
+    print(f"url={url}")
+    return url
 
 @app.route('/dashboard')
 @requires_auth
