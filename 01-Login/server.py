@@ -177,6 +177,7 @@ def dashboards(dashboard_id):
 def analytics():
     
     url = get_looker_biz('/embed/dashboards/7')
+    print(f"url={url}")
     return render_template('embedded.html', url=url)
 
 
