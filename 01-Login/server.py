@@ -125,6 +125,7 @@ def callback_handling():
     else:
         print("Not authorized by role")
         abort(403)
+    print(f"NEXT_URL: {next_url}")
     return redirect(next_url)
 
 
@@ -186,7 +187,6 @@ def analytics():
 @app.route('/get_url')
 @requires_auth
 def get_url():
-    
     url = get_looker_biz('/embed/dashboards/7')
     print(f"url={url}")
     return url
