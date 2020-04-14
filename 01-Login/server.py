@@ -123,6 +123,7 @@ def callback_handling():
         else:
             next_url = return_url
     else:
+        print("Not authorized by role")
         abort(403)
     return redirect(next_url)
 
