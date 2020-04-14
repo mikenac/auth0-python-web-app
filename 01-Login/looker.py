@@ -92,7 +92,7 @@ class URL:
               'first_name':          self.user.first_name,
               'last_name':           self.user.last_name,
               'embed_domain':        self.embed_domain,
-              'sdk':                 2,
+              'sdk':                 "2",
               'force_logout_login':  self.force_logout_login}
 
     query_string = '&'.join(["%s=%s" % (key, urllib.parse.quote_plus(val)) for key, val in params.items()])
